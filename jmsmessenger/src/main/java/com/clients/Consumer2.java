@@ -8,6 +8,7 @@ import javax.jms.JMSConsumer;
 import javax.jms.JMSContext;
 import javax.jms.JMSException;
 import javax.jms.JMSProducer;
+import javax.jms.ObjectMessage;
 import javax.jms.TextMessage;
 import javax.jms.Topic;
 import javax.naming.InitialContext;
@@ -33,40 +34,31 @@ public class Consumer2 {
       Thread.sleep(1000);
     }
     jmsContext.close();
+    int count = 0;
     while (true) {
       JMSContext jmsContextCon = connectionFactory.createContext();
-      try {
-        JMSProducer chatProducer = jmsContextCon.createProducer();
-        User user = new User("Akash");
-        user.setColorCode(ChatUtilities.ANSI_GREEN);
-        System.out.print("Comment please - ");
-        Scanner sc = new Scanner(System.in);
-        String chatMessage = sc.nextLine();
-        TextMessage textMessage;
-        if (chatMessage.equalsIgnoreCase("clear")) {
-          ChatUtilities.clearScreen();
-          textMessage =
-              jmsContextCon.createTextMessage(
-                  user.getColorCode()
-                      + user.getName()
-                      + " : "
-                      + "cleared my console. Its a mess"
-                      + ChatUtilities.ANSI_RESET);
-        } else {
-          textMessage =
-              jmsContextCon.createTextMessage(
-                  user.getColorCode()
-                      + user.getName()
-                      + " : "
-                      + chatMessage
-                      + ChatUtilities.ANSI_RESET);
-        }
-        chatProducer.send(receivedTopic, textMessage);
-        //          System.out.println("Message Sent");
-      } catch (Exception e) {
-        System.out.println(e);
+
+      JMSProducer chatProducer = jmsContextCon.createProducer();
+
+      System.out.print("Comment please - ");
+      Scanner sc = new Scanner(System.in);
+      String chatMessage = sc.nextLine();
+      User user = new User("Nitin");
+      user.setColorCode(ChatUtilities.ANSI_CYAN);
+      user.setChatText(chatMessage);
+      ObjectMessage objMessage;
+
+      if (chatMessage.equalsIgnoreCase("bye")
+          || chatMessage.equalsIgnoreCase("quit")
+          || chatMessage.equalsIgnoreCase("exit")) {
+        objMessage = jmsContextCon.createObjectMessage(user);
+        chatProducer.send(receivedTopic, objMessage);
+        jmsContextCon.close();
+        break;
+      } else {
+        objMessage = jmsContextCon.createObjectMessage(user);
+        chatProducer.send(receivedTopic, objMessage);
       }
-      jmsContextCon.close();
     }
   }
 }

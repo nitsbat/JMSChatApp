@@ -1,10 +1,13 @@
 package com.servers;
 
+import com.model.User;
+import com.util.ChatUtilities;
 import org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory;
 
 import javax.jms.JMSConsumer;
 import javax.jms.JMSContext;
 import javax.jms.JMSException;
+import javax.jms.ObjectMessage;
 import javax.jms.TextMessage;
 import javax.jms.Topic;
 import javax.naming.InitialContext;
@@ -45,12 +48,12 @@ public class MainPublisher {
       JMSContext jmsContextCon = connectionFactory.createContext();
       try {
         JMSConsumer chatConsumer = jmsContextCon.createConsumer(receivedTopic);
-        TextMessage chatReceive = (TextMessage) chatConsumer.receive(2000);
+        ObjectMessage chatReceive = (ObjectMessage) chatConsumer.receive(2000);
         Optional.ofNullable(chatReceive)
             .ifPresent(
                 msg -> {
                   try {
-                    System.out.println(msg.getText());
+                    printMessage(msg);
                   } catch (JMSException e) {
                     System.out.println(e);
                   }
@@ -66,6 +69,20 @@ public class MainPublisher {
         System.out.println(ex);
       }
       jmsContext.close();
+    }
+  }
+
+  private static void printMessage(ObjectMessage msg) throws JMSException {
+    User user = (User) msg.getObject();
+    if (ChatUtilities.isExitStatement(user.getChatText())) {
+      System.out.println(user.getName() + " left the conversation");
+    } else {
+      System.out.println(
+          user.getColorCode()
+              + user.getName()
+              + " : "
+              + user.getChatText()
+              + ChatUtilities.ANSI_RESET);
     }
   }
 
